@@ -96,6 +96,7 @@ def admin_logout():
 
 
 @app.route("/results")
+@admin_required
 def results():
     data = load_votes()
     result_list = []
@@ -117,6 +118,7 @@ def results():
 
 
 @app.route("/reset")
+@admin_required
 def reset():
     # Visit this page (e.g. http://127.0.0.1:5000/reset) to wipe all votes
     # and start the election over. Remove or password-protect this in real use.
