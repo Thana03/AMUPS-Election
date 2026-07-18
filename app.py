@@ -1,7 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for, make_response
+
+
+from flask import Flask, render_template, request, redirect, url_for, make_response, session
 import json
 import os
 import uuid
+from functools import wraps
 
 app = Flask(__name__)
 
@@ -10,6 +13,8 @@ app = Flask(__name__)
 # ---------------------------------------------------------------
 SCHOOL_NAME = "AMUPS Kadalundi Nagaram"
 POST_NAME = "School Leader"
+app.secret_key = os.environ.get("SECRET_KEY", "change-this-to-something-random")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "changeme123")
 
 # ---------------------------------------------------------------
 # CANDIDATES
@@ -38,6 +43,14 @@ def save_votes(data):
     with open(VOTES_FILE, "w") as f:
         json.dump(data, f, indent=2)
 
+def admin_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if not session.get("is_admin"):
+            return redirect(url_for("admin_login"))
+        return f(*args, **kwargs)
+    return wrapper
+
 
 @app.route("/")
 def index():
@@ -64,6 +77,22 @@ def vote():
 @app.route("/thanks")
 def thanks():
     return render_template("thanks.html", school_name=SCHOOL_NAME)
+
+@app.route("/admin", methods=["GET", "POST"])
+def admin_login():
+    error = None
+    if request.method == "POST":
+        if request.form.get("password") == ADMIN_PASSWORD:
+            session["is_admin"] = True
+            return redirect(url_for("results"))
+        error = "Incorrect password."
+    return render_template("admin_login.html", error=error)
+
+
+@app.route("/admin/logout")
+def admin_logout():
+    session.pop("is_admin", None)
+    return redirect(url_for("index"))
 
 
 @app.route("/results")
@@ -95,5 +124,14 @@ def reset():
     return "All votes have been reset. <a href='/'>Go back to voting page</a>"
 
 
+
+
 if __name__ == "__main__":
+    import webbrowser
+    import threading
+
+    def open_browser():
+        webbrowser.open_new("http://127.0.0.1:5000")
+
+    threading.Timer(1.5, open_browser).start()
     app.run(host="0.0.0.0", port=5000, debug=True)
