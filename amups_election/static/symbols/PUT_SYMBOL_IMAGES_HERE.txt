@@ -1,0 +1,10 @@
+Put candidate symbol images in this folder.
+
+Example filenames used in app.py right now:
+- symbol1.png  (Candidate One)
+- symbol2.png  (Candidate Two)
+- symbol3.png  (Candidate Three)
+- symbol4.png  (Candidate Four)
+
+You can rename these in app.py's CANDIDATES list to match whatever
+image file names you actually use (e.g. star.png, sun.jpg, etc.)
