@@ -9,6 +9,7 @@ SCHOOL_NAME = "AMUPS Kadalundi Nagaram"
 
 app.secret_key = os.environ.get("SECRET_KEY", "change-this-to-something-random")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "changeme123")
+VOTER_PASSWORD = os.environ.get("VOTER_PASSWORD", "vote2026")
 
 # ---------------------------------------------------------------
 # SCHOOL LEADER CANDIDATES
@@ -173,6 +174,14 @@ def admin_required(f):
         return f(*args, **kwargs)
     return wrapper
 
+def voter_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if not session.get("voter_verified"):
+            return redirect(url_for("voter_login"))
+        return f(*args, **kwargs)
+    return wrapper
+
 
 def build_result_list(candidates, counts):
     total = sum(counts.values())
@@ -186,11 +195,24 @@ def build_result_list(candidates, counts):
 
 
 @app.route("/")
+@voter_required
 def home():
     return render_template("home.html", school_name=SCHOOL_NAME)
 
 
+@app.route("/voter-login", methods=["GET", "POST"])
+def voter_login():
+    error = None
+    if request.method == "POST":
+        if request.form.get("password") == VOTER_PASSWORD:
+            session["voter_verified"] = True
+            return redirect(url_for("home"))
+        error = "Incorrect password."
+    return render_template("voter_login.html", school_name=SCHOOL_NAME, error=error)
+
+
 @app.route("/school-leader")
+@voter_required
 def school_leader():
     return render_template(
         "vote_page.html",
@@ -203,6 +225,7 @@ def school_leader():
 
 
 @app.route("/school-leader/vote", methods=["POST"])
+@voter_required
 def school_leader_vote():
     data = load_votes()
     candidate_id = request.form.get("candidate_id")
@@ -213,6 +236,7 @@ def school_leader_vote():
 
 
 @app.route("/class-leader")
+@voter_required
 def class_leader_list():
     return render_template(
         "class_list.html",
@@ -222,6 +246,7 @@ def class_leader_list():
 
 
 @app.route("/class-leader/<class_id>")
+@voter_required
 def class_leader_vote_page(class_id):
     cls = get_class(class_id)
     if not cls:
@@ -237,6 +262,7 @@ def class_leader_vote_page(class_id):
 
 
 @app.route("/class-leader/<class_id>/vote", methods=["POST"])
+@voter_required
 def class_leader_vote(class_id):
     cls = get_class(class_id)
     if not cls:
