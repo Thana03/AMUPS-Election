@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{ page_title }} - {{ school_name }}</title>
+<style>
+    body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; text-align: center; }
+    header { background: #1a3c6e; color: white; padding: 25px 10px; }
+    header h1 { margin: 0; font-size: 26px; }
+    header p { margin: 5px 0 0; font-size: 16px; opacity: 0.9; }
+    .post-heading { margin-top: 35px; font-size: 22px; color: #1a3c6e; font-weight: bold; letter-spacing: 0.5px; }
+    .back-link { display: inline-block; margin: 10px 0 30px; color: #1a3c6e; text-decoration: none; font-size: 14px; }
+    .candidate-list { max-width: 600px; margin: 0 auto; padding: 0 20px 20px; text-align: left; }
+    .candidate-row {
+        display: flex; align-items: center; justify-content: space-between;
+        background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        padding: 12px 18px; margin-bottom: 14px;
+    }
+    .candidate-name { font-size: 17px; font-weight: bold; color: #1a3c6e; }
+    .candidate-right { display: flex; align-items: center; gap: 15px; }
+    .symbol { width: 48px; height: 48px; object-fit: contain; border-radius: 6px; background: #f0f0f0; }
+    button.vote-btn {
+        background: #1a3c6e; color: white; border: none; padding: 8px 18px;
+        border-radius: 6px; font-size: 14px; cursor: pointer; white-space: nowrap;
+    }
+    button.vote-btn:hover { background: #12294d; }
+    footer { margin-top: 20px; padding: 15px; font-size: 13px; color: #888; }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>{{ school_name }}</h1>
+    <p>Student Parliamentary Election</p>
+</header>
+
+<h2 class="post-heading">{{ page_title }}</h2>
+<a class="back-link" href="{{ back_url }}">&larr; Back</a>
+
+<div class="candidate-list">
+    {% for c in candidates %}
+    <form class="candidate-row" method="POST" action="{{ vote_action }}">
+        <span class="candidate-name">{{ c.name }}</span>
+        <div class="candidate-right">
+            <img class="symbol" src="{{ url_for('static', filename='symbols/' + c.symbol) }}"
+                 alt="{{ c.name }} symbol"
+                 onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2248%22 height=%2248%22><rect width=%2248%22 height=%2248%22 fill=%22%23e0e5ec%22/></svg>'">
+            <input type="hidden" name="candidate_id" value="{{ c.id }}">
+            <button class="vote-btn" type="submit">Vote</button>
+        </div>
+    </form>
+    {% endfor %}
+</div>
+
+<footer>
+    Election system built for {{ school_name }}
+</footer>
+
+</body>
+</html>
