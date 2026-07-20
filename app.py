@@ -18,7 +18,7 @@ VOTER_PASSWORD = os.environ.get("VOTER_PASSWORD", "vote2026")
 SCHOOL_LEADER_CANDIDATES = [
     {"id": 1, "name": "അമീന മുംതാസ് കെ പി",   "symbol": "symbol1.png"},
     {"id": 2, "name": "ആയിഷ ഫിദ  പി",   "symbol": "symbol2.png"},
-    {"id": 3, "name": "മുഹമ്മദ് സിയാൻ കെ", "symbol": "symbol3.png"},
+    {"id": 3, "name": "മുഹമ്മദ് സിയാൻ വി കെ", "symbol": "symbol3.png"},
     {"id": 4, "name": "നൈല സഫിയ  കെ എം പി",  "symbol": "symbol4.png"},
 ]
 
