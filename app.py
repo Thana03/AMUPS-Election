@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session
 import json
 import os
 from functools import wraps
+import psycopg2
 
 app = Flask(__name__)
 
@@ -10,6 +11,30 @@ SCHOOL_NAME = "AMUPS Kadalundi Nagaram"
 app.secret_key = os.environ.get("SECRET_KEY", "change-this-to-something-random")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "changeme123")
 VOTER_PASSWORD = os.environ.get("VOTER_PASSWORD", "vote2026")
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+
+def get_db_connection():
+    return psycopg2.connect(DATABASE_URL, sslmode="require")
+
+
+def init_db():
+    if not DATABASE_URL:
+        return
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS votes_store (
+            id INTEGER PRIMARY KEY,
+            data TEXT NOT NULL
+        )
+        """
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
 
 # ---------------------------------------------------------------
 # SCHOOL LEADER CANDIDATES
@@ -128,13 +153,23 @@ def default_votes():
 
 
 def load_votes():
-    if not os.path.exists(VOTES_FILE):
-        return default_votes()
-
-    with open(VOTES_FILE, "r") as f:
-        data = json.load(f)
-
     defaults = default_votes()
+
+    if DATABASE_URL:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT data FROM votes_store WHERE id = 1")
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        if row is None:
+            return defaults
+        data = json.loads(row[0])
+    else:
+        if not os.path.exists(VOTES_FILE):
+            return defaults
+        with open(VOTES_FILE, "r") as f:
+            data = json.load(f)
 
     if "school_leader" not in data:
         data["school_leader"] = defaults["school_leader"]
@@ -155,8 +190,25 @@ def load_votes():
 
 
 def save_votes(data):
-    with open(VOTES_FILE, "w") as f:
-        json.dump(data, f, indent=2)
+    if DATABASE_URL:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO votes_store (id, data) VALUES (1, %s)
+            ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data
+            """,
+            (json.dumps(data),),
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+    else:
+        with open(VOTES_FILE, "w") as f:
+            json.dump(data, f, indent=2)
+
+
+init_db()
 
 
 def get_class(class_id):
@@ -173,6 +225,7 @@ def admin_required(f):
             return redirect(url_for("admin_login"))
         return f(*args, **kwargs)
     return wrapper
+
 
 def voter_required(f):
     @wraps(f)
